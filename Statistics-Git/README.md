@@ -1,6 +1,4 @@
-# MA22004 Statistics Labs — University of Dundee
-
-A portfolio of statistical analysis labs completed as part of MA22004 Statistics at the University of Dundee. Each lab demonstrates data analysis, visualisation, and statistical inference using R.
+A portfolio of statistical analysis labs. Each lab demonstrates data analysis, visualisation, and statistical inference using R.
 
 ## Labs
 
