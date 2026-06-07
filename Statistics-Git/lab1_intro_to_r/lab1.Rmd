@@ -1,0 +1,95 @@
+---
+title: "Lab 1: Introduction to R and Data Visualisation"
+subtitle: "MA22004 Statistics — University of Dundee"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(MA22004labs)
+library(tidyverse)
+```
+
+## Exercise 1: Comparing Wide and Long Data Formats
+
+```{r}
+dim(frs_bracket1_wide)
+names(frs_bracket1_wide)
+
+dim(frs_bracket1_long)
+names(frs_bracket1_long)
+```
+
+The dataset `frs_bracket1_wide` has 10 observations and 5 variables (`time`, `All`, `Asian`, `Black`, `White`), where each ethnic group is a separate column. The variable `time` is an ordinal factor representing the reporting period, and the remaining four variables are doubles (proportions).
+
+The dataset `frs_bracket1_long` has 40 observations and 3 variables (`time`, `ethnicity`, `perc`), where ethnicity is stored as a single factor variable and the proportions are stacked in the `perc` column.
+
+Both datasets contain the same information — the proportion of households in the first income bracket across four ethnic groups over 10 reporting periods. The difference is structural: `frs_bracket1_wide` is in wide format (10 rows x 5 columns) while `frs_bracket1_long` is in long format (40 rows x 3 columns). We can verify: 10 years $\times$ 4 groups = 40 rows.
+
+## Exercise 2: Scatter Plot of First Income Bracket Over Time
+
+```{r fig.width=7, fig.asp=0.6}
+ggplot(data = frs_bracket1_long, aes(x = time, y = perc,
+                                      colour = ethnicity,
+                                      shape = ethnicity)) +
+  geom_point(size = 3) +
+  labs(
+    title = "Proportion of Households in First Income Bracket Over Time",
+    subtitle = "Weekly before-tax income up to £200",
+    x = "Reporting Period (three years ending March)",
+    y = "Proportion of Households",
+    colour = "Ethnicity",
+    shape = "Ethnicity"
+  )
+```
+
+There is a general downward trend across all groups — the proportion of households in the lowest income bracket has decreased over time. Black households consistently had the highest proportion in this bracket, though the gap narrowed over time (from approximately 12% in 2012 to 8% in 2021). The All, Asian, and White groups followed broadly similar trajectories, declining from around 9% to 6-7%.
+
+## Exercise 3: Histograms of Income Distribution by Ethnic Group
+
+```{r fig.width=7, fig.asp=1.2}
+frs_income_21 <- frs_income_21 |>
+  mutate(perc = (numerator / denominator) * 100)
+
+ggplot(data = frs_income_21, aes(x = bracket, y = perc)) +
+  geom_histogram(stat = "identity", fill = "steelblue") +
+  facet_grid(ethnicity ~ .) +
+  labs(
+    title = "Distribution of Average Weekly Before-Tax Household Income",
+    subtitle = "Three years ending March 2021, by ethnic group",
+    x = "Income Bracket",
+    y = "Percent of Households"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The income distributions are right-skewed across all ethnic groups, with the majority of households concentrated in the lower income brackets. Notable disparities exist between ethnic groups, particularly at both ends of the income distribution.
+
+## Exercise 4: Headline Summary
+
+```{r}
+# Percentage of ALL households with income below £600
+frs_income_21 |>
+  filter(ethnicity == "All",
+         bracket %in% c("Up to £200", "£200-£299", "£300-£399",
+                        "£400-£499", "£500-£599")) |>
+  summarise(total_perc = sum(perc))
+
+# Which ethnic group most likely to have income under £600
+frs_income_21 |>
+  filter(bracket %in% c("Up to £200", "£200-£299", "£300-£399",
+                        "£400-£499", "£500-£599")) |>
+  group_by(ethnicity) |>
+  summarise(total_perc = sum(perc)) |>
+  arrange(desc(total_perc))
+
+# Which ethnic group most likely to have income £1000+
+frs_income_21 |>
+  filter(bracket %in% c("£1000-£1199", "£1200-£1399",
+                        "£1400-£1599", "£1600-£1799",
+                        "£1800-£1999", "£2000 or more")) |>
+  group_by(ethnicity) |>
+  summarise(total_perc = sum(perc)) |>
+  arrange(desc(total_perc))
+```
+
+The Family Resources Survey (FRS), published by the Department for Work and Pensions, records the average weekly household before-tax income by ethnicity for the three-year period ending in March 2021. As shown in the histograms from Exercise 3, the income distributions are right-skewed across all ethnic groups, with notable disparities particularly at both ends of the income distribution.

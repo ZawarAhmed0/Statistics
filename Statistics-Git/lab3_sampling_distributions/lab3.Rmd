@@ -1,0 +1,149 @@
+---
+title: "Lab 3: Sampling Distributions"
+subtitle: "MA22004 Statistics — University of Dundee"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(MA22004labs)
+library(tidyverse)
+library(cowplot)
+data(ames)
+set.seed(12345)  # Replace with your student ID
+```
+
+## Exercise 1: Sample vs Population Distribution
+
+```{r fig.width=7, fig.asp=1}
+samp1 <- sample(ames$area, 50)
+
+summary(samp1)
+summary(ames$area)
+
+p1 <- ggplot(NULL, aes(x = samp1)) +
+  geom_histogram(bins = 15) +
+  labs(title = "Sample Distribution (n = 50)", x = "Area (sq ft)")
+
+p2 <- ggplot(ames, aes(x = area)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Population Distribution of Area", x = "Area (sq ft)")
+
+plot_grid(p1, p2, nrow = 2)
+```
+
+The sample distribution and population distribution are both right-skewed, with the majority of observations concentrated at lower area values. The sample mean is close to but not identical to the population mean ($\mu = 1499.69$ sq ft), which is expected due to natural sampling variability. The sample has a narrower range compared to the population, as small samples tend to underrepresent extreme values.
+
+## Exercise 2: Comparing Sample Means and Effect of Sample Size
+
+```{r}
+samp1 <- sample(ames$area, 50)
+samp2 <- sample(ames$area, 50)
+samp_100 <- sample(ames$area, 100)
+samp_1000 <- sample(ames$area, 1000)
+
+cat("Population mean:", mean(ames$area), "\n")
+cat("Sample 1 (n=50):", mean(samp1), "\n")
+cat("Sample 2 (n=50):", mean(samp2), "\n")
+cat("Sample (n=100):", mean(samp_100), "\n")
+cat("Sample (n=1000):", mean(samp_1000), "\n")
+```
+
+The two samples of size $n = 50$ yield different means, illustrating sampling variability. The sample of size 1000 generally provides a more accurate estimate of the population mean because, by the Law of Large Numbers, as sample size increases, the sample mean converges to the population mean. The standard error decreases as $n$ increases ($SE = \sigma / \sqrt{n}$).
+
+## Exercise 3: Sampling Distribution of the Sample Mean
+
+```{r fig.width=6, fig.asp=0.75}
+sample_means50 <- rep(NA, 5000)
+for (i in 1:5000) {
+  samp <- sample(ames$area, 50)
+  sample_means50[i] <- mean(samp)
+}
+
+cat("Number of elements:", length(sample_means50), "\n")
+cat("Mean of sampling distribution:", mean(sample_means50), "\n")
+cat("SD of sampling distribution:", sd(sample_means50), "\n")
+
+ggplot(NULL, aes(x = sample_means50)) +
+  geom_histogram(bins = 25) +
+  labs(
+    title = "Sampling Distribution of the Sample Mean (n = 50)",
+    x = "Sample Mean Area (sq ft)",
+    y = "Count"
+  )
+```
+
+The sampling distribution contains 5000 elements. It is approximately normal (bell-shaped and symmetric), consistent with the Central Limit Theorem — even though the population distribution is right-skewed. The centre ($\bar{\bar{x}} \approx 1499.7$) is very close to the population mean $\mu = 1499.69$, confirming that the sample mean is an unbiased estimator. If we collected 50,000 means instead, the centre and spread would remain the same, but the histogram would appear smoother.
+
+## Exercise 4: Effect of Sample Size on Sampling Distribution
+
+```{r fig.width=7, fig.asp=1.2}
+sample_means10 <- rep(NA, 5000)
+sample_means50 <- rep(NA, 5000)
+sample_means100 <- rep(NA, 5000)
+
+for (i in 1:5000) {
+  sample_means10[i] <- mean(sample(ames$area, 10))
+  sample_means50[i] <- mean(sample(ames$area, 50))
+  sample_means100[i] <- mean(sample(ames$area, 100))
+}
+
+cat("n=10:  Mean =", mean(sample_means10), " SD =", sd(sample_means10), "\n")
+cat("n=50:  Mean =", mean(sample_means50), " SD =", sd(sample_means50), "\n")
+cat("n=100: Mean =", mean(sample_means100), " SD =", sd(sample_means100), "\n")
+
+xlimits <- range(sample_means10)
+
+p1 <- ggplot(NULL, aes(x = sample_means10)) +
+  geom_histogram(bins = 25) + xlim(xlimits) +
+  labs(title = "n = 10", x = "Sample Mean Area", y = "Count")
+
+p2 <- ggplot(NULL, aes(x = sample_means50)) +
+  geom_histogram(bins = 25) + xlim(xlimits) +
+  labs(title = "n = 50", x = "Sample Mean Area", y = "Count")
+
+p3 <- ggplot(NULL, aes(x = sample_means100)) +
+  geom_histogram(bins = 25) + xlim(xlimits) +
+  labs(title = "n = 100", x = "Sample Mean Area", y = "Count")
+
+plot_grid(p1, p2, p3, nrow = 3)
+```
+
+**Centre:** The mean of each sampling distribution remains approximately equal to $\mu = 1499.69$, confirming the sample mean is an unbiased estimator regardless of sample size.
+
+**Spread:** The standard error decreases substantially as $n$ increases, consistent with $SE = \sigma / \sqrt{n}$.
+
+**Shape:** The distribution for $n = 10$ shows right-skewness reflecting the population. As $n$ increases to 50 and 100, it becomes increasingly symmetric and normal, consistent with the Central Limit Theorem.
+
+## Exercise 5: Sampling Distribution of the Sample Variance
+
+```{r fig.width=7, fig.asp=1}
+price_k <- ames$price / 1e3
+cat("Population variance:", var(price_k), "\n")
+
+sample_vars15 <- rep(NA, 1000)
+sample_vars30 <- rep(NA, 1000)
+
+for (i in 1:1000) {
+  sample_vars15[i] <- var(sample(price_k, 15))
+  sample_vars30[i] <- var(sample(price_k, 30))
+}
+
+cat("n=15: Mean =", mean(sample_vars15), " SD =", sd(sample_vars15), "\n")
+cat("n=30: Mean =", mean(sample_vars30), " SD =", sd(sample_vars30), "\n")
+
+xlimits <- range(c(sample_vars15, sample_vars30))
+
+p1 <- ggplot(NULL, aes(x = sample_vars15)) +
+  geom_histogram(bins = 30) + xlim(xlimits) +
+  labs(title = "Sampling Distribution of Variance (n = 15)",
+       x = "Sample Variance", y = "Count")
+
+p2 <- ggplot(NULL, aes(x = sample_vars30)) +
+  geom_histogram(bins = 30) + xlim(xlimits) +
+  labs(title = "Sampling Distribution of Variance (n = 30)",
+       x = "Sample Variance", y = "Count")
+
+plot_grid(p1, p2, nrow = 2)
+```
+
+Both sampling distributions are right-skewed, consistent with the sample variance following a scaled $\chi^2$ distribution. The mean of the sample variances for both $n = 15$ and $n = 30$ are close to the population variance, confirming that $s^2$ is an unbiased estimator. As $n$ increases, the distribution becomes narrower (less variable) and less skewed, producing more precise estimates.

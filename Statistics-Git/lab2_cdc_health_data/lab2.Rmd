@@ -1,0 +1,114 @@
+---
+title: "Lab 2: Exploratory Data Analysis"
+subtitle: "MA22004 Statistics — University of Dundee"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(MA22004labs)
+library(tidyverse)
+library(janitor)
+library(ggmosaic)
+data(cdc)
+```
+
+## Exercise 1: Mosaic Plot of Gender vs Smoking Status
+
+```{r fig.width=6, fig.asp=0.75}
+ggplot(data = cdc) +
+  geom_mosaic(aes(x = product(smoke100, gender), fill = smoke100)) +
+  labs(
+    title = "Mosaic Plot of Smoking Status by Gender",
+    x = "Gender",
+    y = "Smoke100",
+    fill = "Smoked 100+ Cigarettes"
+  )
+
+cdc |> tabyl(gender, smoke100)
+```
+
+The mosaic plot reveals a difference in smoking habits between genders. A larger proportion of males (approximately 52.5%) have smoked at least 100 cigarettes in their lifetime compared to females (approximately 42.4%). The mosaic plot visually represents these proportions through the relative areas of the tiles.
+
+## Exercise 2: Categorical Variables and BMI Box Plot
+
+```{r fig.width=6, fig.asp=0.75}
+cdc <- cdc |>
+  mutate(bmi = (weight / height^2) * 703)
+
+ggplot(data = cdc, aes(x = exerany, y = bmi)) +
+  geom_boxplot() +
+  labs(
+    title = "BMI Distribution by Exercise Status",
+    x = "Exercised in Past Month (0 = No, 1 = Yes)",
+    y = "BMI"
+  )
+```
+
+The categorical variables in the CDC data are: `genhlth`, `exerany`, `hlthplan`, `smoke100`, and `gender`. The remaining variables (`height`, `weight`, `wtdesire`, `age`) are numerical.
+
+The variable `exerany` was chosen because physical activity is expected to be associated with lower BMI. The box plot confirms this — the median BMI is lower for those who exercised in the past month compared to those who did not, and the interquartile range is slightly narrower for exercisers.
+
+## Exercise 3: Scatter Plot of Weight vs Desired Weight
+
+```{r fig.width=6, fig.asp=0.75}
+ggplot(data = cdc, aes(x = weight, y = wtdesire)) +
+  geom_point(alpha = 0.2) +
+  labs(
+    title = "Current Weight vs Desired Weight",
+    x = "Current Weight (lbs)",
+    y = "Desired Weight (lbs)"
+  )
+```
+
+The scatter plot reveals a strong, positive, linear relationship between current weight and desired weight. Most points fall below the line $y = x$, suggesting that the majority of respondents desire to weigh less than their current weight. There are very few points above this line, indicating that relatively few people wish to gain weight.
+
+## Exercise 4: Creating the wdiff Variable
+
+```{r}
+cdc <- cdc |>
+  mutate(wdiff = wtdesire - weight)
+
+summary(cdc$wdiff)
+```
+
+The variable `wdiff` is the difference between desired weight and current weight. It is a numerical (quantitative) variable measured in pounds. If `wdiff = 0`, the person is satisfied with their weight. If `wdiff > 0`, they want to gain weight. If `wdiff < 0`, they want to lose weight.
+
+## Exercise 5: Distribution of wdiff
+
+```{r fig.width=6, fig.asp=0.75}
+summary(cdc$wdiff)
+sd(cdc$wdiff)
+
+ggplot(data = cdc, aes(x = wdiff)) +
+  geom_histogram(binwidth = 10) +
+  labs(
+    title = "Distribution of Difference Between Desired and Current Weight",
+    x = "Weight Difference (lbs)",
+    y = "Count"
+  )
+```
+
+The distribution of `wdiff` is left-skewed (negatively skewed), with a long tail extending toward large negative values. The median is approximately $-10$ lbs, indicating that the typical respondent desires to lose about 10 pounds. The distribution is unimodal with its peak near 0. The majority of people want to lose weight, as indicated by the concentration of negative values.
+
+## Exercise 6: Gender Differences in Weight Perception
+
+```{r fig.width=6, fig.asp=0.75}
+cdc |>
+  group_by(gender) |>
+  summarise(
+    mean_wdiff = mean(wdiff),
+    median_wdiff = median(wdiff),
+    sd_wdiff = sd(wdiff),
+    IQR_wdiff = IQR(wdiff)
+  )
+
+ggplot(data = cdc, aes(x = gender, y = wdiff)) +
+  geom_boxplot() +
+  labs(
+    title = "Weight Difference by Gender",
+    x = "Gender",
+    y = "Weight Difference (lbs)"
+  )
+```
+
+Women tend to have a more negative `wdiff` on average, meaning they generally desire to lose more weight than men. Men have a median `wdiff` closer to zero, suggesting they are generally more satisfied with their current weight. Both distributions are left-skewed, but the female distribution is shifted further to the left. Overall, the data suggests that women tend to view their weight more critically than men, desiring greater weight loss on average.

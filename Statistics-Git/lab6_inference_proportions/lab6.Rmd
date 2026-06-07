@@ -1,0 +1,127 @@
+---
+title: "Lab 6: Inference on Proportions"
+subtitle: "MA22004 Statistics — University of Dundee"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(MA22004labs)
+library(tidyverse)
+library(janitor)
+library(infer)
+```
+
+## Exercise 1: Hypothesis Test for Difference in Unemployment Rates
+
+We test whether the unemployment rates for white and minority people in the Scottish labour force are significantly different at the $\alpha = 0.10$ level.
+
+$$H_0: p_m - p_w = 0$$
+$$H_a: p_m - p_w \neq 0$$
+
+where $p_m$ is the proportion of unemployed minority people and $p_w$ is the proportion of unemployed white people.
+
+```{r}
+# Given data (corrected figures from dataset)
+p_w <- 0.036
+p_m <- 0.073
+n_w <- 22623
+n_m <- 1291
+
+# Check success-failure conditions
+cat("White successes:", n_w * p_w, "\n")
+cat("White failures:", n_w * (1 - p_w), "\n")
+cat("Minority successes:", n_m * p_m, "\n")
+cat("Minority failures:", n_m * (1 - p_m), "\n")
+
+# Pooled proportion under H0
+p_hat <- (n_w * p_w + n_m * p_m) / (n_w + n_m)
+cat("Pooled proportion:", p_hat, "\n")
+
+# Standard error
+SE <- sqrt(p_hat * (1 - p_hat) * (1/n_w + 1/n_m))
+cat("Standard error:", SE, "\n")
+
+# Test statistic
+z <- (p_m - p_w) / SE
+cat("z statistic:", z, "\n")
+
+# P-value (two-tailed)
+p_value <- 2 * (1 - pnorm(abs(z)))
+cat("P-value:", p_value, "\n")
+```
+
+All success-failure conditions are satisfied (all values $\geq 10$). The APS is a random household survey and the sample sizes are less than 10% of the Scottish labour force, so independence is reasonable.
+
+Since the $p$-value $\approx 0 < \alpha = 0.10$, we reject $H_0$. There is very strong evidence that the unemployment rates for white and minority people in the Scottish labour force are significantly different. Minority people experience a higher unemployment rate (7.3%) compared to white people (3.6%) in Scotland as of 2022 Q1.
+
+## Exercise 2: Does This Prove Employer Bias?
+
+No, the result of Exercise 1 does not prove that employers are biased. A statistically significant difference in unemployment rates establishes a statistical association between ethnicity and unemployment, but it does not establish a causal relationship. Many other confounding factors could contribute to the observed difference, including:
+
+- **Education level:** Different ethnic groups may have different levels of educational attainment.
+- **Language barriers:** Non-native English speakers may face additional challenges.
+- **Geographic location:** Minority populations may be concentrated in areas with higher unemployment.
+- **Industry and occupation:** Different ethnic groups may be represented in different sectors.
+- **Immigration status:** Recent immigrants may face barriers such as visa restrictions.
+
+To establish employer bias, one would need to control for these confounding variables.
+
+## Exercise 3: Controlling for Education Level
+
+We test whether the unemployment rate among degree-qualified people is significantly different for white and minority people at $\alpha = 0.10$.
+
+$$H_0: p_m - p_w = 0$$
+$$H_a: p_m - p_w \neq 0$$
+
+```{r}
+# Given data
+p_w <- 0.019
+p_m <- 0.039
+n_w <- 5722
+n_m <- 615
+
+# Check success-failure conditions
+cat("White successes:", n_w * p_w, "\n")
+cat("White failures:", n_w * (1 - p_w), "\n")
+cat("Minority successes:", n_m * p_m, "\n")
+cat("Minority failures:", n_m * (1 - p_m), "\n")
+
+# Pooled proportion under H0
+p_hat <- (n_w * p_w + n_m * p_m) / (n_w + n_m)
+
+# Standard error
+SE <- sqrt(p_hat * (1 - p_hat) * (1/n_w + 1/n_m))
+
+# Test statistic
+z <- (p_m - p_w) / SE
+cat("z statistic:", z, "\n")
+
+# P-value (two-tailed)
+p_value <- 2 * (1 - pnorm(abs(z)))
+cat("P-value:", p_value, "\n")
+```
+
+All success-failure conditions are satisfied. Since the $p$-value $< \alpha = 0.10$, we reject $H_0$. Even when controlling for education level (degree or higher), the unemployment rate for minority people (3.9%) is significantly higher than for white people (1.9%).
+
+Comparing with Exercise 1, the gap has narrowed from 3.7 percentage points (overall) to 2.0 percentage points (degree-qualified), indicating that education level explains some but not all of the disparity.
+
+## Exercise 4: Margin of Error vs Population Proportion
+
+```{r fig.width=6, fig.asp=0.75}
+n <- 1000
+p <- seq(0, 1, by = 0.01)
+me <- 1.96 * sqrt(p * (1 - p) / n)
+
+me_data <- tibble(p = p, me = me)
+
+ggplot(me_data, aes(x = p, y = me)) +
+  geom_line() +
+  labs(
+    title = "Margin of Error vs Population Proportion",
+    subtitle = paste("For a fixed sample size n =", n),
+    x = "Population Proportion (p)",
+    y = "Margin of Error (ME)"
+  )
+```
+
+The relationship between the population proportion $p$ and the margin of error follows a symmetric, inverted-U shape. The margin of error is maximised at $p = 0.5$, where the product $p(1-p)$ reaches its maximum value of 0.25. As $p$ moves toward 0 or 1, the margin of error decreases. This is intuitive: when the population is evenly split, there is maximum uncertainty, leading to the largest margin of error.
